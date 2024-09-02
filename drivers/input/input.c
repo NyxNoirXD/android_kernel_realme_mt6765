@@ -29,6 +29,7 @@
 #include <linux/rcupdate.h>
 #include "input-compat.h"
 
+
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("Input core");
 MODULE_LICENSE("GPL");
@@ -274,6 +275,7 @@ static int input_handle_abs_event(struct input_dev *dev,
 static int input_get_disposition(struct input_dev *dev,
 			  unsigned int type, unsigned int code, int *pval)
 {
+	
 	int disposition = INPUT_IGNORE_EVENT;
 	int value = *pval;
 
@@ -381,6 +383,7 @@ static void input_handle_event(struct input_dev *dev,
 			       unsigned int type, unsigned int code, int value)
 {
 	int disposition = input_get_disposition(dev, type, code, &value);
+
 
 	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)
 		add_input_randomness(type, code, value);

@@ -21,10 +21,7 @@
 #include <linux/futex.h>
 #include <linux/uaccess.h>
 
-#include <asm/alternative.h>
-#include <asm/cpufeature.h>
 #include <asm/errno.h>
-#include <asm/sysreg.h>
 
 #define FUTEX_MAX_LOOPS	128 /* What's the largest number you can think of? */
 
@@ -33,8 +30,6 @@ do {									\
 	unsigned int loops = FUTEX_MAX_LOOPS;				\
 									\
 	asm volatile(							\
-	ALTERNATIVE("nop", SET_PSTATE_PAN(0), ARM64_HAS_PAN,		\
-		    CONFIG_ARM64_PAN)					\
 "	prfm	pstl1strm, %2\n"					\
 "1:	ldxr	%w1, %2\n"						\
 	insn "\n"							\
@@ -113,8 +108,8 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *_uaddr,
 		return -EFAULT;
 
 	uaddr = __uaccess_mask_ptr(_uaddr);
+	uaccess_enable();
 	asm volatile("// futex_atomic_cmpxchg_inatomic\n"
-ALTERNATIVE("nop", SET_PSTATE_PAN(0), ARM64_HAS_PAN, CONFIG_ARM64_PAN)
 "	prfm	pstl1strm, %2\n"
 "1:	ldxr	%w1, %2\n"
 "	sub	%w3, %w1, %w5\n"
@@ -137,6 +132,7 @@ ALTERNATIVE("nop", SET_PSTATE_PAN(1), ARM64_HAS_PAN, CONFIG_ARM64_PAN)
 	: "+r" (ret), "=&r" (val), "+Q" (*uaddr), "=&r" (tmp), "+r" (loops)
 	: "r" (oldval), "r" (newval), "Ir" (-EFAULT), "Ir" (-EAGAIN)
 	: "memory");
+	uaccess_disable();
 
 	*uval = val;
 	return ret;

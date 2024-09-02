@@ -191,6 +191,7 @@ journal_err_out:
 	return err;
 }
 
+#ifdef CONFIG_EXT4_FS_ENCRYPTION
 static int uuid_is_zero(__u8 u[16])
 {
 	int	i;
@@ -200,6 +201,7 @@ static int uuid_is_zero(__u8 u[16])
 			return 0;
 	return 1;
 }
+#endif
 
 static int ext4_ioctl_setflags(struct inode *inode,
 			       unsigned int flags)
@@ -275,6 +277,10 @@ static int ext4_ioctl_setflags(struct inode *inode,
 	inode->i_ctime = ext4_current_time(inode);
 
 	err = ext4_mark_iloc_dirty(handle, inode, &iloc);
+#if defined(VENDOR_EDIT) && defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
+//yh@PSW.BSP.Storage.EXT4, 2018-11-26 add for ext4 async discard suppot
+	ext4_update_time(EXT4_SB(inode->i_sb));
+#endif
 flags_err:
 	ext4_journal_stop(handle);
 	if (err)
@@ -432,6 +438,7 @@ static inline unsigned long ext4_xflags_to_iflags(__u32 xflags)
 	return iflags;
 }
 
+extern unsigned int sysctl_ext4_async_discard_enable;
 long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct inode *inode = file_inode(filp);
@@ -737,16 +744,25 @@ resizefs_out:
 		return err;
 	}
 
+	case FIDTRIM:
 	case FITRIM:
 	{
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 		struct fstrim_range range;
 		int ret = 0;
-
+		int flags  = cmd == FIDTRIM ? BLKDEV_DISCARD_SECURE : 0;
+//#if defined(VENDOR_EDIT) && defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
+//yh@PSW.BSP.Storage.EXT4, 2018-11-26 add for ext4 async discard suppot
+//		if (test_opt(sb, ASYNC_DISCARD))  
+//			return 0;
+//#endif
 		if (!capable(CAP_SYS_ADMIN))
 			return -EPERM;
 
 		if (!blk_queue_discard(q))
+			return -EOPNOTSUPP;
+
+		if ((flags & BLKDEV_DISCARD_SECURE) && !blk_queue_secure_erase(q))
 			return -EOPNOTSUPP;
 
 		/*
@@ -760,7 +776,9 @@ resizefs_out:
 		    sizeof(range)))
 			return -EFAULT;
 
-		ret = ext4_trim_fs(sb, &range);
+		range.minlen = max((unsigned int)range.minlen,
+				   q->limits.discard_granularity);
+		ret = ext4_trim_fs(sb, &range, flags);
 		if (ret < 0)
 			return ret;
 
@@ -779,11 +797,12 @@ resizefs_out:
 		return fscrypt_ioctl_set_policy(filp, (const void __user *)arg);
 
 	case EXT4_IOC_GET_ENCRYPTION_PWSALT: {
+#ifdef CONFIG_EXT4_FS_ENCRYPTION
 		int err, err2;
 		struct ext4_sb_info *sbi = EXT4_SB(sb);
 		handle_t *handle;
 
-		if (!ext4_sb_has_crypto(sb))
+		if (!ext4_has_feature_encrypt(sb))
 			return -EOPNOTSUPP;
 		if (uuid_is_zero(sbi->s_es->s_encrypt_pw_salt)) {
 			err = mnt_want_write_file(filp);
@@ -816,6 +835,9 @@ resizefs_out:
 				 sbi->s_es->s_encrypt_pw_salt, 16))
 			return -EFAULT;
 		return 0;
+#else
+		return -EOPNOTSUPP;
+#endif
 	}
 	case EXT4_IOC_GET_ENCRYPTION_POLICY:
 		return fscrypt_ioctl_get_policy(filp, (void __user *)arg);
@@ -825,7 +847,6 @@ resizefs_out:
 		struct fsxattr fa;
 
 		memset(&fa, 0, sizeof(struct fsxattr));
-		ext4_get_inode_flags(ei);
 		fa.fsx_xflags = ext4_iflags_to_xflags(ei->i_flags & EXT4_FL_USER_VISIBLE);
 
 		if (ext4_has_feature_project(inode->i_sb)) {

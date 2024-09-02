@@ -25,7 +25,6 @@
 
 #include <asm/asm-offsets.h>
 #include <asm/cpufeature.h>
-#include <asm/cputype.h>
 #include <asm/page.h>
 #include <asm/pgtable-hwdef.h>
 #include <asm/ptrace.h>
@@ -40,6 +39,15 @@
 
 	.macro	enable_irq
 	msr	daifclr, #2
+	.endm
+
+	.macro	save_and_disable_irq, flags
+	mrs	\flags, daif
+	msr	daifset, #2
+	.endm
+
+	.macro	restore_irq, flags
+	msr	daif, \flags
 	.endm
 
 /*
@@ -456,6 +464,13 @@ alternative_endif
 	movk	\reg, :abs_g1_nc:\val
 	.endif
 	movk	\reg, :abs_g0_nc:\val
+	.endm
+
+/*
+ * Return the current thread_info.
+ */
+	.macro	get_thread_info, rd
+	mrs	\rd, sp_el0
 	.endm
 
 	.macro	pte_to_phys, phys, pte

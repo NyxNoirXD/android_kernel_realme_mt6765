@@ -11,8 +11,11 @@
 /*
  * Time out in seconds for disks and Magneto-opticals (which are slower).
  */
-#define SD_TIMEOUT		(30 * HZ)
+/* MTK PATCH: Max SCSI cmd timeout = 1.2s * 32QueueDepth ~= 39s */
+#define SD_TIMEOUT		(39 * HZ)
 #define SD_MOD_TIMEOUT		(75 * HZ)
+#define SD_DISCARD_TIMEOUT	(100 * HZ)
+
 /*
  * Flush timeout is a multiplier over the standard device timeout which is
  * user modifiable via sysfs but initially set to SD_TIMEOUT
@@ -151,10 +154,26 @@ static inline sector_t logical_to_sectors(struct scsi_device *sdev, sector_t blo
 	return blocks << (ilog2(sdev->sector_size) - 9);
 }
 
-static inline unsigned int logical_to_bytes(struct scsi_device *sdev, sector_t blocks)
-{
-	return blocks * sdev->sector_size;
-}
+/*
+ * A DIF-capable target device can be formatted with different
+ * protection schemes.  Currently 0 through 3 are defined:
+ *
+ * Type 0 is regular (unprotected) I/O
+ *
+ * Type 1 defines the contents of the guard and reference tags
+ *
+ * Type 2 defines the contents of the guard and reference tags and
+ * uses 32-byte commands to seed the latter
+ *
+ * Type 3 defines the contents of the guard tag only
+ */
+
+enum sd_dif_target_protection_types {
+	SD_DIF_TYPE0_PROTECTION = 0x0,
+	SD_DIF_TYPE1_PROTECTION = 0x1,
+	SD_DIF_TYPE2_PROTECTION = 0x2,
+	SD_DIF_TYPE3_PROTECTION = 0x3,
+};
 
 /*
  * Look up the DIX operation based on whether the command is read or
