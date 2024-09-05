@@ -4,7 +4,14 @@ config KERNEL_ALWAYS_PERMISSIVE_MODE
      help
      This option for always kernel in permissive mode,
      when u build KernelSU this option is recommended.
-      
+
+config HATSUNE_Q_DISP
+     bool "change limit from 255 to 2047 for brightness"
+     default n
+     help
+     if rom still bug brightness try set Y this config, may can help u.
+     Android Q recommended for fix low brightness.
+
 menu "NetHunter Support"
 
 config NETHUNTER_SUPPORT
