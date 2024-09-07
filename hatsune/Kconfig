@@ -1,9 +1,15 @@
+menu  "Selinux"
+
 config KERNEL_ALWAYS_PERMISSIVE_MODE
      bool "make kernel always permissive mode"
      default n
      help
      This option for always kernel in permissive mode,
      when u build KernelSU this option is recommended.
+
+endmenu
+
+menu "Display"
 
 config HATSUNE_Q_DISP
      bool "change limit from 255 to 2047 for brightness"
@@ -14,10 +20,12 @@ config HATSUNE_Q_DISP
      file "android.hardware.light@2.0-service-mediatek" required for GSI, check repo release.
 
 config MTK_VIDEOX_LINEAGE_LIVEDISPLAY
-        bool CONFIG_MTK_VIDEOX_LINEAGE_LIVEDISPLAY
+        bool "LineageOS color calibration"
         default n
         help
           Enables the RGB interface for color calibration using LineageOS's LiveDisplay.
+
+endmenu
 
 menu "NetHunter Support"
 
