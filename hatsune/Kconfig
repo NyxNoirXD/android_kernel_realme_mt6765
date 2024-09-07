@@ -13,6 +13,12 @@ config HATSUNE_Q_DISP
      Android Q recommended for fix low brightness.
      file "android.hardware.light@2.0-service-mediatek" required for GSI, check repo release.
 
+config MTK_VIDEOX_LINEAGE_LIVEDISPLAY
+        bool CONFIG_MTK_VIDEOX_LINEAGE_LIVEDISPLAY
+        default n
+        help
+          Enables the RGB interface for color calibration using LineageOS's LiveDisplay.
+
 menu "NetHunter Support"
 
 config NETHUNTER_SUPPORT
