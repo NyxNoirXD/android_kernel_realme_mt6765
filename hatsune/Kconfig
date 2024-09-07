@@ -11,6 +11,7 @@ config HATSUNE_Q_DISP
      help
      if rom still bug brightness try set Y this config, may can help u.
      Android Q recommended for fix low brightness.
+     file "android.hardware.light@2.0-service-mediatek" required for GSI, check repo release.
 
 menu "NetHunter Support"
 
