@@ -5,7 +5,7 @@ config KERNEL_ALWAYS_PERMISSIVE_MODE
      default n
      help
      This option for always kernel in permissive mode,
-     when u build KernelSU this option is recommended.
+     when u build KernelSU or Apatch this option is recommended.
 
 endmenu
 
