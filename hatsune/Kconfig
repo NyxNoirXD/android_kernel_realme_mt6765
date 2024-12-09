@@ -27,6 +27,8 @@ config MTK_VIDEOX_LINEAGE_LIVEDISPLAY
 
 endmenu
 
+source "docker/Kconfig"
+
 menu "NetHunter Support"
 
 config NETHUNTER_SUPPORT
